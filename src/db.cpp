@@ -172,9 +172,18 @@ bool CDBEnv::Salvage(std::string strFile, bool fAggressive,
 
     Db db(&dbenv, 0);
     int result = db.verify(strFile.c_str(), NULL, &strDump, flags);
-    if (result != 0)
+    if (result == DB_VERIFY_BAD)
     {
-        printf("ERROR: db salvage failed\n");
+        printf("Error: Salvage found errors, all data may not be recoverable.\n");
+        if (!fAggressive)
+        {
+            printf("Error: Rerun with aggressive mode to ignore errors and continue.\n");
+            return false;
+        }
+    }
+    if (result != 0 && result != DB_VERIFY_BAD)
+    {
+        printf("ERROR: db salvage failed: %d\n",result);
         return false;
     }
 
@@ -802,7 +811,7 @@ bool CTxDB::LoadBlockIndexGuts()
 
     // Load mapBlockIndex
     unsigned int fFlags = DB_SET_RANGE;
-    loop
+    while (true)
     {
         // Read next record
         CDataStream ssKey(SER_DISK, CLIENT_VERSION);
@@ -825,9 +834,11 @@ bool CTxDB::LoadBlockIndexGuts()
         {
             CDiskBlockIndex diskindex;
             ssValue >> diskindex;
+			
+			uint256 blockHash = diskindex.GetBlockHash();
 
             // Construct block index object
-            CBlockIndex* pindexNew = InsertBlockIndex(diskindex.GetBlockHash());
+            CBlockIndex* pindexNew = InsertBlockIndex(blockHash);
             pindexNew->pprev          = InsertBlockIndex(diskindex.hashPrev);
             pindexNew->pnext          = InsertBlockIndex(diskindex.hashNext);
             pindexNew->nFile          = diskindex.nFile;
@@ -847,7 +858,7 @@ bool CTxDB::LoadBlockIndexGuts()
             pindexNew->nNonce         = diskindex.nNonce;
 
             // Watch for genesis block
-            if (pindexGenesisBlock == NULL && diskindex.GetBlockHash() == (!fTestNet ? hashGenesisBlock : hashGenesisBlockTestNet))
+            if (pindexGenesisBlock == NULL && blockHash == (!fTestNet ? hashGenesisBlock : hashGenesisBlockTestNet))
                 pindexGenesisBlock = pindexNew;
 
             if (!pindexNew->CheckIndex())

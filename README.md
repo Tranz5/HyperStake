@@ -47,6 +47,14 @@ Start up the new hyperstaked.
 
 
 See the hyperstake site:
-  http://hyperstake.org/
+  http://hyperstake.com/
 for help and more information.
+
+### Wallet themes
+
+| HyperBlue     | PoloniexNight | PoloniexDay   |
+| ------------- | ------------- | ------------- |
+| [![HyperBlue](https://github.com/zeewolfik/HyperStake/raw/master/src/qt/res/screenshots/hyperstake-hyperblue-theme-th.png)](https://github.com/zeewolfik/HyperStake/raw/master/src/qt/res/screenshots/hyperstake-hyperblue-theme.png) | [![PoloniexNight](https://github.com/zeewolfik/HyperStake/raw/master/src/qt/res/screenshots/hyperstake-poloniexnight-theme-th.png)](https://github.com/zeewolfik/HyperStake/raw/master/src/qt/res/screenshots/hyperstake-poloniexnight-theme.png) | [![PoloniexNight](https://github.com/zeewolfik/HyperStake/raw/master/src/qt/res/screenshots/hyperstake-poloniexday-theme-th.png)](https://github.com/zeewolfik/HyperStake/raw/master/src/qt/res/screenshots/hyperstake-poloniexday-theme.png) |
+
+
 

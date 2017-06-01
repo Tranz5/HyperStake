@@ -6,16 +6,19 @@
 
 #include "util.h" // for uint64
 
-class TransactionTableModel;
-class ClientModel;
-class WalletModel;
-class TransactionView;
-class OverviewPage;
 class AddressBookPage;
+class BlockBrowser;
+class ClientModel;
+class NetworkStyle;
+class Notificator;
+class OverviewPage;
+class RPCConsole;
 class SendCoinsDialog;
 class SignVerifyMessageDialog;
-class Notificator;
-class RPCConsole;
+class StakeForCharityDialog;
+class TransactionTableModel;
+class TransactionView;
+class WalletModel;
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -36,7 +39,7 @@ class BitcoinGUI : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit BitcoinGUI(QWidget *parent = 0);
+    explicit BitcoinGUI(const NetworkStyle *networkStyle, QWidget *parent = 0);
     ~BitcoinGUI();
 
     /** Set the client model.
@@ -67,6 +70,8 @@ private:
     AddressBookPage *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
     SignVerifyMessageDialog *signVerifyMessageDialog;
+	StakeForCharityDialog *stakeForCharityDialog;
+	BlockBrowser *blockBrowser;
 
     QLabel *labelEncryptionIcon;
     QLabel *labelMintingIcon;
@@ -84,7 +89,6 @@ private:
     QAction *signMessageAction;
     QAction *verifyMessageAction;
     QAction *aboutAction;
-	QAction *charityAction;
     QAction *receiveCoinsAction;
     QAction *optionsAction;
     QAction *toggleHideAction;
@@ -97,20 +101,42 @@ private:
 	QAction *checkWalletAction;
 	QAction *repairWalletAction;
     QAction *aboutQtAction;
+    QAction *themeCustomAction;
     QAction *openRPCConsoleAction;
+	QAction *blockAction;
+	QAction *blocksIconAction;
+	QAction *connectionIconAction;
+	QAction *stakingIconAction;
+	QAction *charityAction;
+	QAction *calcAction;
+	
 	
 
     QSystemTrayIcon *trayIcon;
+    QMenu *trayIconMenu;
     Notificator *notificator;
     TransactionView *transactionView;
     RPCConsole *rpcConsole;
 
     QMovie *syncIconMovie;
+    QMovie *miningIconMovie;
 
     uint64 nMinMax;
     uint64 nWeight;
     uint64 nNetworkWeight;
 	uint64 nHoursToMaturity;
+	uint64 nAmount;
+	bool fMultiSend;
+	bool fMultiSendNotify;
+	int nCharityPercent;
+	QString strCharityAddress;
+    /* Themes support */
+    QString selectedTheme;
+    QStringList themesList;
+    // Path to directory where all themes are (usable for some common images?...)
+    QString themesDir;
+    QAction *customActions[100];
+    /* /Themes support */
 
     /** Create the main UI actions. */
     void createActions();
@@ -118,8 +144,11 @@ private:
     void createMenuBar();
     /** Create the toolbars */
     void createToolBars();
-    /** Create system tray (notification) icon */
-    void createTrayIcon();
+    /** Create system tray icon and notification */
+    void createTrayIcon(const NetworkStyle *networkStyle);
+    /** Create system tray menu (or setup the dock menu) */
+    void createTrayIconMenu();
+
 
 public slots:
     /** Set number of connections shown in the UI */
@@ -156,18 +185,20 @@ private slots:
     void gotoReceiveCoinsPage();
     /** Switch to send coins page */
     void gotoSendCoinsPage();
-
+	/** Switch to block browser page */
+	void gotoBlockBrowser(QString transactionId = "");
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
     /** Show Sign/Verify Message dialog and switch to verify message tab */
     void gotoVerifyMessageTab(QString addr = "");
-
+	/** Allow user to unlock wallet from click */
+	void lockIconClicked();
     /** Show configuration dialog */
     void optionsClicked();
     /** Show about dialog */
     void aboutClicked();
-	/** Show Stake For Charity Dialog */
-    void charityClicked();
+	/** Show Stake Calculator Dialog */
+    void calcClicked();
 #ifndef Q_OS_MAC
     /** Handle tray icon clicked */
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
@@ -187,11 +218,14 @@ private slots:
     void backupWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
+	/** Lock Wallet */
+	void lockWallet();
     /** Toggle unlocking wallet temporarily */
     void lockWalletToggle();
-
- void unlockWallet();
-
+	/** Ask for passphrase to unlock wallet temporarily */
+	void unlockWallet();
+	/** Ask for passphrase to unlock wallet for the session to mint */
+	void unlockWalletForMint();
     /** Show window if hidden, unminimize when minimized, rise when obscured or show if hidden and fToggleHidden is true */
     void showNormalIfMinimized(bool fToggleHidden = false);
     /** simply calls showNormalIfMinimized(true) for use in SLOT() macro */
@@ -201,6 +235,12 @@ private slots:
     void updateMintingIcon();
     /** Update minting weight info */
     void updateMintingWeights();
+	void charityClicked(QString addr = "");
+    /** Load external QSS stylesheet */
+    void changeTheme(QString theme);
+    void loadTheme(QString theme);
+    void listThemes(QStringList& themes);
+    void keyPressEvent(QKeyEvent * e);
 };
 
 #endif

@@ -6,6 +6,9 @@
 #include "main.h"
 #include "bitcoinrpc.h"
 
+#include <iostream>
+#include <fstream>
+
 using namespace json_spirit;
 using namespace std;
 
@@ -42,15 +45,18 @@ double GetDifficulty(const CBlockIndex* blockindex)
     return dDiff;
 }
 
-double GetPoSKernelPS()
+double GetPoSKernelPS(const CBlockIndex* blockindex)
 {
     int nPoSInterval = 72;
     double dStakeKernelsTriedAvg = 0;
     int nStakesHandled = 0, nStakesTime = 0;
 
-    CBlockIndex* pindex = pindexBest;;
-    CBlockIndex* pindexPrevStake = NULL;
+    const CBlockIndex* pindex = pindexBest;
+	const CBlockIndex* pindexPrevStake = NULL;
 
+	if (blockindex != NULL)
+		pindex = blockindex;
+		
     while (pindex && nStakesHandled < nPoSInterval)
     {
         if (pindex->IsProofOfStake())
@@ -127,7 +133,7 @@ Value getblockcount(const Array& params, bool fHelp)
     return nBestHeight;
 }
 
-
+//comment
 Value getdifficulty(const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 0)
@@ -253,4 +259,63 @@ Value getcheckpoint(const Array& params, bool fHelp)
         result.push_back(Pair("checkpointmaster", true));
 
     return result;
+}
+
+// presstab HyperStake
+Value exportdifficulty(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+        throw runtime_error(
+            "export difficulty <interval> <directory>\n"
+            "interval will give difficulty for every Xth block\n"
+            "directory is the location to export the csv: C:\\example.csv)");
+	
+	int nInterval = params[0].get_int();		
+	std::string strDir = params[1].get_str();
+    
+	ofstream File; 
+	
+	File.open(strDir.c_str()); 
+	File << "Block, Difficulty" << endl;
+	for(int i = 0; i < nBestHeight; i += nInterval)
+	{
+		File << i;
+		File << ",";		
+		File << GetDifficulty(FindBlockByHeight(i)) << endl; 
+	}
+	File.close(); 
+    return "succesfully exported";
+}
+
+// presstab HyperStake
+Value listblocks(const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() != 2)
+        throw runtime_error(
+            "<listblocks> <highest height> <# of blocks to display>\n"
+            "list basic information about a range of blocks\n");
+    unsigned int nTopBlock = params[0].get_int();
+    unsigned int nRange = params[1].get_int();
+    Array arrRet;
+
+    for(unsigned int i = 0; i < nRange; i++) 
+    {
+        Object blk;
+        unsigned int nBlockNumber = nTopBlock - i;
+        CBlockIndex* pindex = FindBlockByHeight(nBlockNumber);
+        blk.push_back(Pair("height", pindex->nHeight));
+        blk.push_back(Pair("hash", pindex->GetBlockHash().GetHex()));
+        blk.push_back(Pair("time", (boost::int64_t)pindex->GetBlockTime()));
+        blk.push_back(Pair("difficulty", GetDifficulty(pindex)));
+        if(pindex->IsProofOfStake())
+            blk.push_back(Pair("type", "PoS"));
+        else
+            blk.push_back(Pair("type", "PoW"));
+        blk.push_back(Pair("minted", ValueFromAmount(pindex->nMint)));
+        blk.push_back(Pair("money supply", ValueFromAmount(pindex->nMoneySupply)));
+
+        arrRet.push_back(blk);
+    }  
+
+    return arrRet;
 }

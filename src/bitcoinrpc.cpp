@@ -191,8 +191,6 @@ Value stop(const Array& params, bool fHelp)
     return "HyperStake server stopping";
 }
 
-
-
 //
 // Call Table
 //
@@ -208,8 +206,6 @@ static const CRPCCommand vRPCCommands[] =
     { "getpeerinfo",            &getpeerinfo,            true,   false },
     { "getdifficulty",          &getdifficulty,          true,   false },
     { "getgenerate",            &getgenerate,            true,   false },
-    { "setgenerate",            &setgenerate,            true,   false },
-    { "gethashespersec",        &gethashespersec,        true,   false },
     { "getinfo",                &getinfo,                true,   false },
 	{ "addnode",                &addnode,                true,   true  },
 	{ "getaddednodeinfo",       &getaddednodeinfo,       true,   true  },
@@ -221,7 +217,10 @@ static const CRPCCommand vRPCCommands[] =
     { "getaccount",             &getaccount,             false,  false },
     { "getaddressesbyaccount",  &getaddressesbyaccount,  true,   false },
     { "sendtoaddress",          &sendtoaddress,          false,  false },
-	//{ "splitblock",             &splitblock,             false,  false },
+	{ "setstakesplitthreshold", &setstakesplitthreshold, false,  false },
+	{ "getstakesplitthreshold", &getstakesplitthreshold, false,  false },
+	{ "disablestake", 			&disablestake, 		 	 false,  false },
+	{ "rescanfromblock", 		&rescanfromblock, 		 false,  false },
     { "getreceivedbyaddress",   &getreceivedbyaddress,   false,  false },
     { "getreceivedbyaccount",   &getreceivedbyaccount,   false,  false },
     { "listreceivedbyaddress",  &listreceivedbyaddress,  false,  false },
@@ -244,6 +243,8 @@ static const CRPCCommand vRPCCommands[] =
     { "getblockbynumber",       &getblockbynumber,       false,  false },
     { "getblockhash",           &getblockhash,           false,  false },
     { "gettransaction",         &gettransaction,         false,  false },
+	{ "getstaketx",             &getstaketx,             false,  false },
+	{ "deleteaddress",          &deleteaddress,          false,  false },
     { "listtransactions",       &listtransactions,       false,  false },
     { "listaddressgroupings",   &listaddressgroupings,   false,  false },
     { "signmessage",            &signmessage,            false,  false },
@@ -266,13 +267,31 @@ static const CRPCCommand vRPCCommands[] =
     { "getcheckpoint",          &getcheckpoint,          true,   false },
 	{ "moneysupply",          	&moneysupply,          	 true,   false },
 	{ "getmoneysupply",         &getmoneysupply,         true,   false },
+	{ "exportdifficulty",       &exportdifficulty,       true,   false },
     { "reservebalance",         &reservebalance,         false,  true},
     { "checkwallet",            &checkwallet,            false,  true},
     { "repairwallet",           &repairwallet,           false,  true},
     { "resendtx",               &resendtx,               false,  true},
     { "makekeypair",            &makekeypair,            false,  true},
     { "sendalert",              &sendalert,              false,  false},
-	{ "stakeforcharity",        &stakeforcharity,            false,  false },
+	{ "multisend",        &multisend,        false,  false },
+	{ "cclistcoins", 			&cclistcoins, 			 false,  false },
+	{ "ccselect",        		&ccselect,               false,  false },
+	{ "cclistselected",        	&cclistselected,         false,  false },
+    { "ccreturnchange",		&ccreturnchange,	false,	false },
+    { "cccustomchange",		&cccustomchange,	false,	false },
+    { "ccreset",		&ccreset,	false,	false },
+	{ "ccsend",		&ccsend,	false,	false },
+	{ "getweight",	&getweight,	false,	false },
+	{ "getpotentialstake",	&getpotentialstake,	false,	false },
+	{ "getconfs",	&getconfs,	false,	false },
+	{ "strictprotocol",	&strictprotocol,	false,	false },
+	{ "strictincoming",	&strictincoming,	false,	false },
+	{ "setgenerate",            &setgenerate,            true,   false },
+    { "gethashespersec",        &gethashespersec,        true,   false },
+	{ "listblocks",        &listblocks,        false,   false },
+	{ "hashsettings",        &hashsettings,        false,   false },
+	{ "gettxfee",        &gettxfee,        false,   false },
 };
 
 CRPCTable::CRPCTable()
@@ -394,7 +413,7 @@ int ReadHTTPStatus(std::basic_istream<char>& stream, int &proto)
 int ReadHTTPHeader(std::basic_istream<char>& stream, map<string, string>& mapHeadersRet)
 {
     int nLen = 0;
-    loop
+    while (true)
     {
         string str;
         std::getline(stream, str);
@@ -946,7 +965,7 @@ void ThreadRPCServer3(void* parg)
     AcceptedConnection *conn = (AcceptedConnection *) parg;
 
     bool fRun = true;
-    loop {
+    while (true) {
         if (fShutdown || !fRun)
         {
             conn->close();
@@ -1115,8 +1134,6 @@ Object CallRPC(const string& strMethod, const Array& params)
 }
 
 
-
-
 template<typename T>
 void ConvertTo(Value& value, bool fAllowNull=false)
 {
@@ -1154,8 +1171,6 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "setgenerate"            && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "setgenerate"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
-	//if (strMethod == "splitblock"             && n > 1) ConvertTo<double>(params[1]);
-	//if (strMethod == "splitblock"             && n > 1) ConvertTo<double>(params[2]);
     if (strMethod == "settxfee"               && n > 0) ConvertTo<double>(params[0]);
 	if (strMethod == "getaddednodeinfo"       && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "getreceivedbyaddress"   && n > 1) ConvertTo<boost::int64_t>(params[1]);
@@ -1168,6 +1183,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "getblock"               && n > 1) ConvertTo<bool>(params[1]);
     if (strMethod == "getblockbynumber"       && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "getblockbynumber"       && n > 1) ConvertTo<bool>(params[1]);
+	if (strMethod == "exportdifficulty"       && n > 0) ConvertTo<boost::int64_t>(params[0]);
 	if (strMethod == "getmoneysupply"       && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "getmoneysupply"       && n > 1) ConvertTo<bool>(params[1]);
     if (strMethod == "getblockhash"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
@@ -1196,8 +1212,23 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "createrawtransaction"   && n > 1) ConvertTo<Object>(params[1]);
     if (strMethod == "signrawtransaction"     && n > 1) ConvertTo<Array>(params[1], true);
     if (strMethod == "signrawtransaction"     && n > 2) ConvertTo<Array>(params[2], true);
-	if (strMethod == "stakeforcharity"        && n > 1) ConvertTo<int>(params[1]);
-
+	if (strMethod == "setstakesplitthreshold" && n > 0) ConvertTo<int>(params[0]);
+	if (strMethod == "disablestake" 		  && n > 0) ConvertTo<bool>(params[0]);
+	if (strMethod == "disablestake" 		  && n > 2) ConvertTo<double>(params[3]);
+	if (strMethod == "rescanfromblock" && n > 0)        ConvertTo<int>(params[0]);
+	if (strMethod == "ccselect" && n > 1)        		ConvertTo<int>(params[1]);
+	if (strMethod == "ccreturnchange" && n > 0)			ConvertTo<bool>(params[0]);
+	if (strMethod == "ccsend" && n > 1)        		ConvertTo<int>(params[1]);
+	if (strMethod == "sendalert" && n > 1)        		ConvertTo<int>(params[2]);
+	if (strMethod == "sendalert" && n > 1)        		ConvertTo<int>(params[3]);
+	if (strMethod == "sendalert" && n > 1)        		ConvertTo<int>(params[4]);
+	if (strMethod == "sendalert" && n > 1)        		ConvertTo<int>(params[5]);
+	if (strMethod == "sendalert" && n > 1)        		ConvertTo<int>(params[6]);
+	if (strMethod == "sendalert" && n > 7)        		ConvertTo<int>(params[7]);
+	if (strMethod == "strictprotocol" && n > 0)      ConvertTo<bool>(params[0]);
+	if (strMethod == "strictincoming" && n > 0)      ConvertTo<bool>(params[0]);
+	if (strMethod == "listblocks" && n > 0)      ConvertTo<int>(params[0]);
+    if (strMethod == "listblocks" && n > 1)      ConvertTo<int>(params[1]);
     return params;
 }
 
@@ -1264,8 +1295,6 @@ int CommandLineRPC(int argc, char *argv[])
     }
     return nRet;
 }
-
-
 
 
 #ifdef TEST

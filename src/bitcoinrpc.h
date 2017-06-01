@@ -128,7 +128,7 @@ extern int64 AmountFromValue(const json_spirit::Value& value);
 extern json_spirit::Value ValueFromAmount(int64 amount);
 extern double GetDifficulty(const CBlockIndex* blockindex = NULL);
 
-extern double GetPoSKernelPS();
+extern double GetPoSKernelPS(const CBlockIndex* blockindex = NULL);
 
 extern std::string HexBits(unsigned int nBits);
 extern std::string HelpRequiringPassphrase();
@@ -158,7 +158,6 @@ extern json_spirit::Value setaccount(const json_spirit::Array& params, bool fHel
 extern json_spirit::Value getaccount(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getaddressesbyaccount(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value sendtoaddress(const json_spirit::Array& params, bool fHelp);
-//extern json_spirit::Value splitblock(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value signmessage(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value verifymessage(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getreceivedbyaddress(const json_spirit::Array& params, bool fHelp);
@@ -175,6 +174,8 @@ extern json_spirit::Value listaddressgroupings(const json_spirit::Array& params,
 extern json_spirit::Value listaccounts(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value listsinceblock(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value gettransaction(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getstaketx(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value deleteaddress(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value backupwallet(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value keypoolrefill(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value walletpassphrase(const json_spirit::Array& params, bool fHelp);
@@ -191,7 +192,24 @@ extern json_spirit::Value makekeypair(const json_spirit::Array& params, bool fHe
 extern json_spirit::Value validatepubkey(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getnewpubkey(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getnetworkhashps(const json_spirit::Array& params, bool fHelp);
-extern json_spirit::Value stakeforcharity(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value multisend(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value setstakesplitthreshold(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getstakesplitthreshold(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value disablestake(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value rescanfromblock(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value cclistcoins(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value ccselect(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value cclistselected(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value ccreturnchange(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value cccustomchange(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value ccreset(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value ccsend(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getweight(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getpotentialstake(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getconfs(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value strictprotocol(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value strictincoming(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value hashsettings(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value getrawtransaction(const json_spirit::Array& params, bool fHelp); // in rcprawtransaction.cpp
 extern json_spirit::Value listunspent(const json_spirit::Array& params, bool fHelp);
@@ -199,6 +217,7 @@ extern json_spirit::Value createrawtransaction(const json_spirit::Array& params,
 extern json_spirit::Value decoderawtransaction(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value signrawtransaction(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value sendrawtransaction(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value gettxfee(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value getblockcount(const json_spirit::Array& params, bool fHelp); // in rpcblockchain.cpp
 extern json_spirit::Value getdifficulty(const json_spirit::Array& params, bool fHelp);
@@ -208,6 +227,8 @@ extern json_spirit::Value getblockhash(const json_spirit::Array& params, bool fH
 extern json_spirit::Value getblock(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getblockbynumber(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getcheckpoint(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value exportdifficulty(const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value listblocks(const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value moneysupply(const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getmoneysupply(const json_spirit::Array& params, bool fHelp);

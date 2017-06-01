@@ -39,10 +39,9 @@ static const int64 MIN_RELAY_TX_FEE = .00001 * COIN;
 static const int64 MAX_MONEY = 60000000 * COIN;
 static const int64 MAX_MONEY2 = 60000000 * COIN;			// 60 mil
 static const int64 MAX_MINT_PROOF_OF_STAKE = 2.00 * COIN;	// 200% annual interest
-
 static const int64 MAX_MINT_PROOF_OF_STAKEV2 = 7.50 * COIN;	// 750% annual interest
 static const unsigned int FORK_TIME = 1404678625; // Sun, 06 Jul 2014 20:30:25 GMT
-
+static const unsigned int FORK_TIME2 = 1423836000; // Fri, 13 Feb 2015 14:00:00 GMT
 static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
@@ -56,12 +55,17 @@ static const int fHaveUPnP = false;
 #endif
 
 static const uint256 hashGenesisBlockOfficial("0x000005fe04e512585c3611369c7ce23f130958038c18a462577d002680dab4fc");
-static const uint256 hashGenesisBlockTestNet ("0x0000076130e1a816bab8f26310839ab601305b2315dc3b8b1a250faa0cb1f9a8");
+static const uint256 hashGenesisBlockTestNet ("0x534d8009c099b04d05d7475f48eea977ca2fedaf409e233c884eff34d2efdb8e");
 
-static const int64 nMaxClockDrift = 15 * 60;        // fifteen minutes
-
+inline int64 GetClockDrift(int64 nTime)
+{
+	if(nTime < FORK_TIME2)
+		return 15 * 60;
+	else
+		return 60;
+}
+static const int64 MAX_TIME_SINCE_BEST_BLOCK = 10; // how many seconds to wait before sending next PushGetBlocks()
 extern CScript COINBASE_FLAGS;
-
 
 extern CCriticalSection cs_main;
 extern std::map<uint256, CBlockIndex*> mapBlockIndex;
@@ -69,6 +73,7 @@ extern std::set<std::pair<COutPoint, unsigned int> > setStakeSeen;
 extern uint256 hashGenesisBlock;
 extern CBlockIndex* pindexGenesisBlock;
 extern unsigned int nStakeMinAge;
+extern unsigned int nStakeMinAgeV2;
 extern int nCoinbaseMaturity;
 extern int nBestHeight;
 extern CBigNum bnBestChainTrust;
@@ -87,6 +92,12 @@ extern CCriticalSection cs_setpwalletRegistered;
 extern std::set<CWallet*> setpwalletRegistered;
 extern unsigned char pchMessageStart[4];
 extern std::map<uint256, CBlock*> mapOrphanBlocks;
+extern bool fHaveGUI;
+extern std::map<unsigned int, unsigned int> mapHashedBlocks;
+extern std::map<std::string, std::pair<int, int> > mapGetBlocksRequests;
+extern std::map <std::string, int> mapPeerRejectedBlocks;
+extern bool fStrictProtocol;
+extern bool fStrictIncoming;
 
 // Settings
 extern int64 nTransactionFee;
@@ -103,6 +114,7 @@ void RegisterWallet(CWallet* pwalletIn);
 void UnregisterWallet(CWallet* pwalletIn);
 void SyncWithWallets(const CTransaction& tx, const CBlock* pblock = NULL, bool fUpdate = false, bool fConnect = true);
 bool ProcessBlock(CNode* pfrom, CBlock* pblock);
+bool ProcessBlock(CNode* pfrom, CBlock* pblock, std::string& strErr);
 bool CheckDiskSpace(uint64 nAdditionalBytes=0);
 FILE* OpenBlockFile(unsigned int nFile, unsigned int nBlockPos, const char* pszMode="rb");
 FILE* AppendBlockFile(unsigned int& nFileRet);
@@ -1352,6 +1364,9 @@ public:
 /** Used to marshal pointers into hashes for db storage. */
 class CDiskBlockIndex : public CBlockIndex
 {
+private: 
+    uint256 blockHash;
+
 public:
     uint256 hashPrev;
     uint256 hashNext;
@@ -1360,6 +1375,7 @@ public:
     {
         hashPrev = 0;
         hashNext = 0;
+		blockHash = 0;
     }
 
     explicit CDiskBlockIndex(CBlockIndex* pindex) : CBlockIndex(*pindex)
@@ -1401,6 +1417,7 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+		READWRITE(blockHash);
     )
 
     uint256 GetBlockHash() const
@@ -1412,7 +1429,9 @@ public:
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
-        return block.GetHash();
+        const_cast<CDiskBlockIndex*>(this)->blockHash = block.GetHash();
+
+        return blockHash;
     }
 
 
